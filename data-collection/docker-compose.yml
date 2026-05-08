@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: timescale/timescaledb-ha:pg17
+    container_name: reddit-sentiment-db
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: reddit_crawler
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  faktory:
+    image: contribsys/faktory
+    container_name: reddit-sentiment-faktory
+    environment:
+      FAKTORY_PASSWORD: password
+    ports:
+      - "7419:7419"
+      - "7420:7420"
+    volumes:
+      - faktory-data:/var/lib/faktory/db
+    command: /faktory -b :7419 -w :7420
+
+volumes:
+  postgres-data:
+  faktory-data:

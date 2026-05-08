@@ -1,0 +1,24 @@
+.env
+**/.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+
+# data
+data/*.duckdb
+data/raw/*
+!data/raw/.gitkeep
+data/sample/*.duckdb
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/.user.yml
+
+# editors
+.idea/
+.vscode/
+.claude/

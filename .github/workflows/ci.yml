@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install pipeline deps
+        run: |
+          pip install duckdb pandas python-dotenv dbt-core dbt-duckdb
+
+      - name: Smoke test (lexicon path, end-to-end)
+        run: python tests/test_smoke.py
+
+      - name: Seed sample data
+        run: python -m scraper.collectors --sample --days 14
+
+      - name: Run NLP (lexicon backend)
+        run: |
+          python -m nlp.sentiment --backend lexicon
+          python -m nlp.themes
+
+      - name: dbt build
+        working-directory: dbt
+        run: |
+          dbt run --profiles-dir .
+          dbt test --profiles-dir .

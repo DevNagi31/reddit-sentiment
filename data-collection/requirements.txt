@@ -1,0 +1,6 @@
+requests
+psycopg2-binary
+python-dotenv
+pyfaktory
+duckdb
+pandas

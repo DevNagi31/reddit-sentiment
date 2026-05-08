@@ -1,0 +1,8 @@
+reddit_sentiment:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # Resolved relative to the dbt project directory at runtime.
+      path: "../data/reddit_sentiment.duckdb"
+      threads: 4

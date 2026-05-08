@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: fact_posts
+    description: "One row per post; the central fact in the star schema."
+    columns:
+      - name: post_id
+        tests: [not_null, unique]
+      - name: company_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_company')
+              field: company_id
+      - name: date_id
+        tests: [not_null]
+      - name: sentiment
+        tests:
+          - accepted_values:
+              values: ['positive', 'neutral', 'negative']
+
+  - name: dim_company
+    columns:
+      - name: company_id
+        tests: [not_null, unique]
+
+  - name: dim_subreddit
+    columns:
+      - name: subreddit_id
+        tests: [not_null, unique]
+      - name: name
+        tests: [not_null, unique]
+
+  - name: company_sentiment
+    columns:
+      - name: company_id
+        tests: [not_null, unique]
+      - name: total_posts
+        tests: [not_null]
+
+  - name: trend_analysis
+    columns:
+      - name: company_id
+        tests: [not_null]
+      - name: date
+        tests: [not_null]
+
+  - name: weekly_summary
+    columns:
+      - name: company_id
+        tests: [not_null]
+      - name: week_start
+        tests: [not_null]
