@@ -13,34 +13,25 @@ An end-to-end analytics pipeline that scrapes Reddit for product/company sentime
 
 Companies spend thousands on sentiment analysis tools. Reddit has millions of authentic, unfiltered opinions about every product and company — but it's unstructured noise. This project turns that noise into structured, actionable intelligence.
 
-## What It Does
+## Dashboard
 
-```
-┌─────────────────────────────────────────────────────┐
-│ RedditSentiment — Brand Intelligence Dashboard       │
-│                                                       │
-│ 📊 Story: "Tesla sentiment shifted negative this     │
-│ week after the Cybertruck wheel recall. The most     │
-│ negative theme is Recall / Safety; pricing and       │
-│ charging remain positive — issue-specific, not       │
-│ systemic brand erosion."                              │
-│                                                       │
-│ Sentiment Over Time (rolling 7d)                      │
-│ ▆▆▅▄▃▂▁▂▃▄▅▆  Tesla                                 │
-│ ▅▅▆▆▆▇▇▇▇▇▇▇  Apple                                 │
-│ ▅▅▅▆▆▆▆▇▇▇▇▇  Google                                │
-│                                                       │
-│ Top Themes (Tesla)                Volume: 73 posts   │
-│ ┌────────────────┬───────┬────────┐                  │
-│ │ Theme          │ Sent. │ Posts  │                  │
-│ ├────────────────┼───────┼────────┤                  │
-│ │ Recall/Safety  │ -1.00 │     11 │                  │
-│ │ Earnings       │ -0.18 │     14 │                  │
-│ │ Product Launch │ +0.14 │     19 │                  │
-│ │ Pricing        │ +0.28 │     23 │                  │
-│ └────────────────┴───────┴────────┘                  │
-└─────────────────────────────────────────────────────┘
-```
+A macOS-inspired Streamlit dashboard reads from the dbt marts and surfaces the data through four tabs.
+
+### Overview — leaderboard, scatter, and a company × theme heatmap
+
+![Overview tab](docs/screenshots/01-overview.png)
+
+### Company Deep-Dive — KPI strip, sentiment mix, themes, trend, top posts
+
+![Company Deep-Dive tab](docs/screenshots/02-deep-dive.png)
+
+### Themes — distribution and volume-weighted sentiment
+
+![Themes tab](docs/screenshots/03-themes.png)
+
+### Posts Explorer — filterable feed with sentiment pills + direct links
+
+![Posts Explorer tab](docs/screenshots/04-posts-explorer.png)
 
 ### Features
 

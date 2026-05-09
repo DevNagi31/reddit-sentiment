@@ -120,38 +120,38 @@ st.markdown("""
     width: auto !important;
     margin: 0 0 1.4rem 0;
   }
-  div[data-baseweb="tab"] {
-    background: transparent;
-    border-radius: 7px;
+  button[data-baseweb="tab"], [data-testid="stTab"] {
+    background: transparent !important;
+    border-radius: 7px !important;
     padding: 7px 18px !important;
-    height: auto;
-    font-weight: 500;
-    font-size: 0.88rem;
-    color: var(--text-2);
-    border: none;
-    text-align: center;
+    height: auto !important;
+    font-weight: 500 !important;
+    font-size: 0.88rem !important;
+    color: var(--text-2) !important;
+    border: none !important;
+    text-align: center !important;
     transition: background .18s ease, color .18s ease, box-shadow .18s ease;
     cursor: pointer;
-    flex: none;
-    min-width: 130px;
+    flex: none !important;
+    min-width: 130px !important;
   }
-  div[data-baseweb="tab"] p {
-    color: var(--text-2);
-    margin: 0;
-    font-weight: 500;
+  button[data-baseweb="tab"] p, [data-testid="stTab"] p {
+    color: var(--text-2) !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
   }
-  div[data-baseweb="tab"]:hover { color: var(--text); }
-  div[data-baseweb="tab"]:hover p { color: var(--text); }
-  div[data-baseweb="tab"][aria-selected="true"] {
-    background: #FFFFFF;
+  button[data-baseweb="tab"]:hover, [data-testid="stTab"]:hover { color: var(--text) !important; }
+  button[data-baseweb="tab"]:hover p, [data-testid="stTab"]:hover p { color: var(--text) !important; }
+  button[data-baseweb="tab"][aria-selected="true"], [data-testid="stTab"][aria-selected="true"] {
+    background: #FFFFFF !important;
     color: var(--text) !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.04),
                 0 1px 4px rgba(0,0,0,0.07),
-                0 0 0 0.5px rgba(0,0,0,0.04);
+                0 0 0 0.5px rgba(0,0,0,0.04) !important;
   }
-  div[data-baseweb="tab"][aria-selected="true"] p {
+  button[data-baseweb="tab"][aria-selected="true"] p, [data-testid="stTab"][aria-selected="true"] p {
     color: var(--text) !important;
-    font-weight: 600;
+    font-weight: 600 !important;
   }
   /* hide Streamlit's default tab underline + bottom border */
   div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] {
