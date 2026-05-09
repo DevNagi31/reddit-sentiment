@@ -40,15 +40,44 @@ COMPANIES = [
      "aliases": ["microsoft", "windows", "azure", "xbox", "satya nadella"]},
 ]
 
-# Subreddits the scraper pulls from.
+# Subreddits the crawler pulls from. Mix of finance/general subs + company-
+# specific boards so each tracked company gets real coverage instead of the
+# 1-or-2-post problem when only generalist subs are sampled.
 SUBREDDITS = [
-    {"name": "stocks",      "category": "finance"},
-    {"name": "investing",   "category": "finance"},
-    {"name": "technology",  "category": "tech"},
-    {"name": "cars",        "category": "auto"},
-    {"name": "RealTesla",   "category": "auto"},
-    {"name": "apple",       "category": "tech"},
-    {"name": "Android",     "category": "tech"},
+    # finance — broad market chatter
+    {"name": "stocks",            "category": "finance"},
+    {"name": "investing",         "category": "finance"},
+    {"name": "wallstreetbets",    "category": "finance"},
+    {"name": "StockMarket",       "category": "finance"},
+
+    # tech — broad
+    {"name": "technology",        "category": "tech"},
+    {"name": "gadgets",           "category": "tech"},
+
+    # Tesla / auto / EV
+    {"name": "cars",              "category": "auto"},
+    {"name": "RealTesla",         "category": "auto"},
+    {"name": "teslamotors",       "category": "auto"},
+    {"name": "electricvehicles",  "category": "auto"},
+
+    # Apple
+    {"name": "apple",             "category": "tech"},
+    {"name": "iphone",            "category": "tech"},
+    {"name": "mac",               "category": "tech"},
+
+    # Google / Android
+    {"name": "Android",           "category": "tech"},
+    {"name": "google",            "category": "tech"},
+    {"name": "GooglePixel",       "category": "tech"},
+
+    # Microsoft
+    {"name": "microsoft",         "category": "tech"},
+    {"name": "windows",           "category": "tech"},
+    {"name": "xbox",              "category": "tech"},
+
+    # Amazon
+    {"name": "amazon",            "category": "retail"},
+    {"name": "aws",               "category": "tech"},
 ]
 
 # Keyword themes — coarse buckets for theme tagging without needing BERTopic
