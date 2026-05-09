@@ -9,6 +9,7 @@ Run after the pipeline has built the marts:
 """
 from __future__ import annotations
 
+import html
 import sys
 from pathlib import Path
 
@@ -77,8 +78,9 @@ st.markdown("""
                letter-spacing: -0.02em; line-height: 1.15; margin-top: 0.2rem; }
   .kpi-delta-pos { color: var(--positive); font-size: 0.85rem; font-weight: 500; }
   .kpi-delta-neg { color: var(--negative); font-size: 0.85rem; font-weight: 500; }
+  .kpi-delta-neu { color: var(--text-2);   font-size: 0.85rem; font-weight: 500; }
   .kpi-with-logo { display:flex; align-items:center; gap:10px; }
-  .kpi-with-logo img { width:22px; height:22px; }
+  .kpi-with-logo img { width:24px; height:24px; border-radius:4px; }
 
   /* sentiment pills */
   .pill { padding:2px 10px; border-radius:999px; font-size:0.72rem;
@@ -93,7 +95,8 @@ st.markdown("""
                box-shadow: 0 1px 2px rgba(0,0,0,0.02); transition: all .15s ease; }
   .post-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-color: var(--separator); }
   .post-row { display:flex; align-items:flex-start; gap:12px; }
-  .post-logo { width:24px; height:24px; flex-shrink:0; margin-top:2px; }
+  .post-logo { width:24px; height:24px; flex-shrink:0; margin-top:2px;
+               border-radius:4px; }
   .post-body { flex:1; min-width:0; }
   .post-title { color: var(--text); font-weight:500; line-height:1.35;
                 text-decoration:none; }
@@ -102,13 +105,48 @@ st.markdown("""
                 display:flex; gap:10px; align-items:center; }
   .post-meta .sep { color: var(--separator); }
 
-  /* tabs — macOS segmented control feel */
-  div[data-baseweb="tab-list"] { gap: 4px; background: var(--separator-l);
-                                  padding: 3px; border-radius: 8px; width: fit-content; }
-  div[data-baseweb="tab"] { background: transparent; border-radius: 6px;
-                            padding: 6px 14px; height: auto; font-weight: 500; }
-  div[data-baseweb="tab"][aria-selected="true"] { background: var(--card);
-                                                   box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  /* tabs — full-width segmented control with clear active state */
+  div[data-baseweb="tab-list"] {
+    gap: 6px;
+    background: #FFFFFF;
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid var(--separator-l);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    display: flex;
+    width: 100%;
+    margin-bottom: 1.2rem;
+  }
+  div[data-baseweb="tab"] {
+    background: transparent;
+    border-radius: 8px;
+    padding: 10px 18px !important;
+    height: auto;
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--text-2);
+    flex: 1;
+    text-align: center;
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  div[data-baseweb="tab"]:hover {
+    background: var(--separator-l);
+    color: var(--text);
+  }
+  div[data-baseweb="tab"][aria-selected="true"] {
+    background: var(--accent);
+    color: #FFFFFF !important;
+    box-shadow: 0 1px 4px rgba(0,113,227,0.35);
+  }
+  div[data-baseweb="tab"][aria-selected="true"] p {
+    color: #FFFFFF !important;
+    font-weight: 600;
+  }
+  /* hide Streamlit's default tab underline + border */
+  div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] {
+    display: none !important;
+  }
 
   /* tables */
   div[data-testid="stDataFrame"] { border:1px solid var(--separator-l);
@@ -132,29 +170,30 @@ st.markdown("""
 
 # ---------- Logos ----------------------------------------------------------
 
-# Simple-icons CDN — single-color SVGs by slug. Using neutral dark fill so
-# logos read consistently against the light macOS background.
-COMPANY_LOGOS: dict[str, str] = {
-    "Tesla":     "tesla",
-    "Apple":     "apple",
-    "Google":    "google",
-    "Microsoft": "microsoft",
-    "Amazon":    "amazon",
+# Google's favicon service. Works reliably for any domain (simple-icons
+# dropped Microsoft and Amazon). Returns the live company favicon.
+COMPANY_DOMAINS: dict[str, str] = {
+    "Tesla":     "tesla.com",
+    "Apple":     "apple.com",
+    "Google":    "google.com",
+    "Microsoft": "microsoft.com",
+    "Amazon":    "amazon.com",
 }
-LOGO_COLOR = "1D1D1F"
 
 
 def logo_url(company: str) -> str:
-    slug = COMPANY_LOGOS.get(company)
-    return f"https://cdn.simpleicons.org/{slug}/{LOGO_COLOR}" if slug else ""
+    domain = COMPANY_DOMAINS.get(company)
+    if not domain:
+        return ""
+    return f"https://www.google.com/s2/favicons?domain={domain}&sz=128"
 
 
-def logo_img(company: str, size: int = 18) -> str:
+def logo_img(company: str, size: int = 20) -> str:
     url = logo_url(company)
     if not url:
         return ""
     return (f'<img src="{url}" width="{size}" height="{size}" '
-            f'style="vertical-align:middle;margin-right:6px;" />')
+            f'style="vertical-align:middle;margin-right:8px;border-radius:4px;" />')
 
 
 # ---------- Data layer -----------------------------------------------------
@@ -179,15 +218,31 @@ def _has_marts() -> bool:
 
 # ---------- Helpers --------------------------------------------------------
 
+_DELTA_CLS = {
+    "pos": "kpi-delta-pos",
+    "neg": "kpi-delta-neg",
+    "neu": "kpi-delta-neu",
+}
+
+
+def delta_color_for(value: float, threshold: float = 0.05) -> str:
+    """Return 'pos' / 'neg' / 'neu' based on a small dead-zone around 0."""
+    if value > threshold:
+        return "pos"
+    if value < -threshold:
+        return "neg"
+    return "neu"
+
+
 def kpi(label: str, value: str, delta: str | None = None,
         delta_color: str = "pos", logo_company: str | None = None) -> None:
     delta_html = ""
     if delta:
-        cls = "kpi-delta-pos" if delta_color == "pos" else "kpi-delta-neg"
+        cls = _DELTA_CLS.get(delta_color, "kpi-delta-neu")
         delta_html = f'<div class="{cls}">{delta}</div>'
     if logo_company:
         value_html = (f'<div class="kpi-value kpi-with-logo">'
-                      f'{logo_img(logo_company, size=22)}{value}</div>')
+                      f'{logo_img(logo_company, size=24)}{value}</div>')
     else:
         value_html = f'<div class="kpi-value">{value}</div>'
     st.markdown(
@@ -247,12 +302,12 @@ if not _has_marts():
 
 global_stats = q("""
     SELECT
-        COUNT(*)                                   AS total_posts,
-        COUNT(DISTINCT company_id)                 AS companies,
-        COUNT(DISTINCT subreddit_id)               AS subreddits,
-        AVG(score)                                 AS avg_sentiment,
-        MIN(created_utc)::DATE                     AS first_date,
-        MAX(created_utc)::DATE                     AS last_date
+        COUNT(*)                                          AS total_posts,
+        COUNT(DISTINCT company_id)                        AS companies,
+        COUNT(DISTINCT subreddit_id)                      AS subreddits,
+        AVG(score)                                        AS avg_sentiment,
+        QUANTILE_CONT(EPOCH(created_utc), 0.05)           AS first_epoch,
+        MAX(created_utc)::DATE                            AS last_date
     FROM marts.fact_posts
 """).iloc[0]
 
@@ -270,19 +325,20 @@ with c1: kpi("Total posts",  f"{int(global_stats.total_posts):,}")
 with c2: kpi("Companies",    f"{int(global_stats.companies)}")
 with c3: kpi("Subreddits",   f"{int(global_stats.subreddits)}")
 with c4: kpi("Most positive", most_positive.company_name,
-             delta=f"+{most_positive.avg_sentiment:.2f} avg",
-             delta_color="pos",
+             delta=f"{most_positive.avg_sentiment:+.2f} avg",
+             delta_color=delta_color_for(most_positive.avg_sentiment),
              logo_company=most_positive.company_name)
 with c5: kpi("Most negative", most_negative.company_name,
              delta=f"{most_negative.avg_sentiment:+.2f} avg",
-             delta_color="neg" if most_negative.avg_sentiment < 0 else "pos",
+             delta_color=delta_color_for(most_negative.avg_sentiment),
              logo_company=most_negative.company_name)
 
-first_d = pd.to_datetime(global_stats.first_date).strftime("%b %d, %Y")
+first_d = pd.to_datetime(global_stats.first_epoch, unit="s").strftime("%b %d, %Y")
 last_d  = pd.to_datetime(global_stats.last_date).strftime("%b %d, %Y")
 st.markdown(
     f'<div class="page-sub" style="margin-top:0.4rem">Window: '
-    f'{first_d} → {last_d}</div>',
+    f'{first_d} → {last_d} <span style="opacity:0.6">'
+    f'(5th–100th percentile of post timestamps)</span></div>',
     unsafe_allow_html=True,
 )
 st.divider()
@@ -388,11 +444,15 @@ with tab_company:
         WHERE company_id = {company_id}
     """).iloc[0]
 
+    _avg = float(cs.avg_sentiment)
+    _label = ("positive" if _avg > 0.05 else
+              "negative" if _avg < -0.05 else "neutral")
+
     k1, k2, k3, k4 = st.columns(4)
     with k1: kpi("Posts",          f"{int(cs.total_posts):,}")
-    with k2: kpi("Avg sentiment",  f"{cs.avg_sentiment:+.2f}",
-                 delta="positive" if cs.avg_sentiment > 0 else "negative",
-                 delta_color="pos" if cs.avg_sentiment > 0 else "neg")
+    with k2: kpi("Avg sentiment",  f"{_avg:+.2f}",
+                 delta=_label,
+                 delta_color=delta_color_for(_avg))
     with k3: kpi("Negative share", f"{cs.negative_share:.0%}")
     with k4: kpi("Total upvotes",  f"{int(cs.total_upvotes):,}")
 
@@ -485,8 +545,8 @@ with tab_company:
                 f'<div class="post-card"><div class="post-row">'
                 f'<img src="{logo_url(company_name)}" class="post-logo" />'
                 f'<div class="post-body">'
-                f'<a href="{r.permalink}" target="_blank" class="post-title">'
-                f'{r.title[:140]}</a>'
+                f'<a href="{html.escape(r.permalink)}" target="_blank" class="post-title">'
+                f'{html.escape(r.title[:140])}</a>'
                 f'<div class="post-meta">{sentiment_pill("positive")}'
                 f'<span class="sep">·</span>score {r.score:+.2f}'
                 f'<span class="sep">·</span>{int(r.upvotes)} upvotes</div>'
@@ -506,8 +566,8 @@ with tab_company:
                 f'<div class="post-card"><div class="post-row">'
                 f'<img src="{logo_url(company_name)}" class="post-logo" />'
                 f'<div class="post-body">'
-                f'<a href="{r.permalink}" target="_blank" class="post-title">'
-                f'{r.title[:140]}</a>'
+                f'<a href="{html.escape(r.permalink)}" target="_blank" class="post-title">'
+                f'{html.escape(r.title[:140])}</a>'
                 f'<div class="post-meta">{sentiment_pill("negative")}'
                 f'<span class="sep">·</span>score {r.score:+.2f}'
                 f'<span class="sep">·</span>{int(r.upvotes)} upvotes</div>'
@@ -530,7 +590,7 @@ with tab_themes:
         tdata, x="theme", y="posts", color="company_name",
         barmode="group",
         labels={"posts": "Posts", "theme": "", "company_name": "Company"},
-        color_discrete_sequence=["#0071E3", "#5856D6", "#FF9500", "#34C759", "#FF3B30"],
+        color_discrete_sequence=["#0071E3", "#5856D6", "#FF9500", "#30D158", "#FF453A"],
     )
     themed(fig, height=420)
     fig.update_layout(legend=dict(orientation="h", yanchor="bottom",
@@ -610,14 +670,14 @@ with tab_posts:
             f'<div class="post-card"><div class="post-row">'
             f'<img src="{logo_url(r.company_name)}" class="post-logo" />'
             f'<div class="post-body">'
-            f'<a href="{r.permalink}" target="_blank" class="post-title">'
-            f'{r.title[:140]}</a>'
+            f'<a href="{html.escape(r.permalink)}" target="_blank" class="post-title">'
+            f'{html.escape(r.title[:140])}</a>'
             f'<div class="post-meta">{sentiment_pill(r.sentiment)}'
-            f'<span class="sep">·</span><strong>{r.company_name}</strong>'
-            f'<span class="sep">·</span>{r.theme or "—"}'
+            f'<span class="sep">·</span><strong>{html.escape(r.company_name)}</strong>'
+            f'<span class="sep">·</span>{html.escape(r.theme or "—")}'
             f'<span class="sep">·</span>{r.created_utc:%b %d, %H:%M}'
             f'<span class="sep">·</span>score {r.score:+.2f}'
             f'<span class="sep">·</span>{int(r.upvotes)} ups'
-            f'</div></div></div></div>',
+            f'</div></div></div>',
             unsafe_allow_html=True,
         )
