@@ -18,10 +18,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 def main() -> None:
-    from nlp.sentiment import _lexicon_score, score
+    from nlp.sentiment import _lexicon_score, score, score_comments
     from nlp.themes import _theme_for, tag
     from scraper.sample_data import generate
-    from warehouse.db import connect, init_schema, upsert_posts
+    from warehouse.db import connect, init_schema, upsert_comments, upsert_posts
 
     # 1. lexicon scoring
     label, s = _lexicon_score("Tesla recall is terrible, avoid")
@@ -40,10 +40,13 @@ def main() -> None:
 
     # 3. end-to-end ingest -> sentiment -> themes
     init_schema()
-    posts, _ = generate(days=3, posts_per_day=5)
+    posts, comments = generate(days=3, posts_per_day=5)
     n = upsert_posts(posts)
     assert n > 0
     print(f"[ok] inserted {n} sample posts")
+
+    nc = upsert_comments(comments)
+    print(f"[ok] inserted {nc} sample comments")
 
     n = score(backend="lexicon")
     assert n > 0
@@ -52,12 +55,21 @@ def main() -> None:
     n = tag()
     print(f"[ok] tagged {n} posts with themes")
 
+    if nc > 0:
+        ncs = score_comments(backend="lexicon")
+        assert ncs > 0
+        print(f"[ok] scored {ncs} comments")
+
     con = connect()
     counts = con.execute("""
         SELECT sentiment, COUNT(*) FROM raw.post_sentiment GROUP BY 1 ORDER BY 1
     """).fetchall()
+    ccounts = con.execute("""
+        SELECT sentiment, COUNT(*) FROM raw.comment_sentiment GROUP BY 1 ORDER BY 1
+    """).fetchall()
     con.close()
-    print(f"[ok] sentiment distribution: {counts}")
+    print(f"[ok] post sentiment distribution:    {counts}")
+    print(f"[ok] comment sentiment distribution: {ccounts}")
 
     print("\nAll smoke tests passed.")
 
