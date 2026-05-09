@@ -16,15 +16,9 @@ DATA_DIR.mkdir(exist_ok=True)
 
 DUCKDB_PATH = Path(os.getenv("DUCKDB_PATH", DATA_DIR / "reddit_sentiment.duckdb"))
 
-REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID", "")
-REDDIT_CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET", "")
-REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT", "reddit-sentiment/0.1")
+REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT", "reddit-sentiment/0.1 (educational project)")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-
-
-def has_reddit_credentials() -> bool:
-    return bool(REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET)
 
 
 def has_groq_credentials() -> bool:
