@@ -278,9 +278,11 @@ with c5: kpi("Most negative", most_negative.company_name,
              delta_color="neg" if most_negative.avg_sentiment < 0 else "pos",
              logo_company=most_negative.company_name)
 
+first_d = pd.to_datetime(global_stats.first_date).strftime("%b %d, %Y")
+last_d  = pd.to_datetime(global_stats.last_date).strftime("%b %d, %Y")
 st.markdown(
     f'<div class="page-sub" style="margin-top:0.4rem">Window: '
-    f'{global_stats.first_date} → {global_stats.last_date}</div>',
+    f'{first_d} → {last_d}</div>',
     unsafe_allow_html=True,
 )
 st.divider()
@@ -566,7 +568,7 @@ with tab_posts:
     with f1:
         co_filter = st.multiselect(
             "Company",
-            sorted(q("SELECT DISTINCT company_name FROM marts.fact_posts").company_name.tolist()),
+            sorted(q("SELECT name FROM marts.dim_company ORDER BY name").name.tolist()),
             default=None,
         )
     with f2:
@@ -584,18 +586,20 @@ with tab_posts:
 
     where = ["1=1"]
     if co_filter:
-        where.append("company_name IN (" + ",".join(f"'{c}'" for c in co_filter) + ")")
+        where.append("c.name IN (" + ",".join(f"'{x}'" for x in co_filter) + ")")
     if sent_filter:
-        where.append("sentiment IN (" + ",".join(f"'{s}'" for s in sent_filter) + ")")
+        where.append("f.sentiment IN (" + ",".join(f"'{s}'" for s in sent_filter) + ")")
     if theme_filter:
-        where.append("theme IN (" + ",".join(f"'{t}'" for t in theme_filter) + ")")
+        where.append("f.theme IN (" + ",".join(f"'{t}'" for t in theme_filter) + ")")
 
     posts = q(f"""
-        SELECT created_utc, company_name, theme, sentiment, score, upvotes, title, permalink
+        SELECT f.created_utc,
+               c.name AS company_name,
+               f.theme, f.sentiment, f.score, f.upvotes, f.title, f.permalink
         FROM marts.fact_posts f
         JOIN marts.dim_company c USING (company_id)
         WHERE {' AND '.join(where)}
-        ORDER BY created_utc DESC
+        ORDER BY f.created_utc DESC
         LIMIT {int(n_posts)}
     """)
     st.markdown(f'<div class="sec-cap">{len(posts)} posts</div>',
