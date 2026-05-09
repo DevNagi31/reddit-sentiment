@@ -105,45 +105,55 @@ st.markdown("""
                 display:flex; gap:10px; align-items:center; }
   .post-meta .sep { color: var(--separator); }
 
-  /* tabs — full-width segmented control with clear active state */
+  /* tabs — true macOS segmented control: subtle gray pill background,
+     active tab is a white card "lifted" with shadow. No accent color
+     here on purpose — keeps the chrome neutral so the data colors
+     (in cards/charts) carry the visual weight. */
   div[data-baseweb="tab-list"] {
-    gap: 6px;
-    background: #FFFFFF;
-    padding: 6px;
-    border-radius: 12px;
-    border: 1px solid var(--separator-l);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    display: flex;
-    width: 100%;
-    margin-bottom: 1.2rem;
+    gap: 2px;
+    background: #EEEEF1;
+    padding: 4px;
+    border-radius: 10px;
+    border: none;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.03);
+    display: inline-flex !important;
+    width: auto !important;
+    margin: 0 0 1.4rem 0;
   }
   div[data-baseweb="tab"] {
     background: transparent;
-    border-radius: 8px;
-    padding: 10px 18px !important;
+    border-radius: 7px;
+    padding: 7px 18px !important;
     height: auto;
     font-weight: 500;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     color: var(--text-2);
-    flex: 1;
+    border: none;
     text-align: center;
-    transition: all 0.15s ease;
+    transition: background .18s ease, color .18s ease, box-shadow .18s ease;
     cursor: pointer;
+    flex: none;
+    min-width: 130px;
   }
-  div[data-baseweb="tab"]:hover {
-    background: var(--separator-l);
-    color: var(--text);
+  div[data-baseweb="tab"] p {
+    color: var(--text-2);
+    margin: 0;
+    font-weight: 500;
   }
+  div[data-baseweb="tab"]:hover { color: var(--text); }
+  div[data-baseweb="tab"]:hover p { color: var(--text); }
   div[data-baseweb="tab"][aria-selected="true"] {
-    background: var(--accent);
-    color: #FFFFFF !important;
-    box-shadow: 0 1px 4px rgba(0,113,227,0.35);
+    background: #FFFFFF;
+    color: var(--text) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04),
+                0 1px 4px rgba(0,0,0,0.07),
+                0 0 0 0.5px rgba(0,0,0,0.04);
   }
   div[data-baseweb="tab"][aria-selected="true"] p {
-    color: #FFFFFF !important;
+    color: var(--text) !important;
     font-weight: 600;
   }
-  /* hide Streamlit's default tab underline + border */
+  /* hide Streamlit's default tab underline + bottom border */
   div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] {
     display: none !important;
   }
