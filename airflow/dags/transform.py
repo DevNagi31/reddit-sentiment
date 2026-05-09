@@ -14,7 +14,7 @@ with DAG(
     dag_id="transform_dbt",
     description="Run dbt models and tests.",
     start_date=datetime(2026, 1, 1),
-    schedule_interval="@daily",
+    schedule="@daily",
     catchup=False,
     default_args=default_args,
     tags=["reddit", "dbt"],

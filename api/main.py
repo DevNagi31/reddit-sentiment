@@ -112,3 +112,32 @@ def company_themes(ticker: str) -> list[dict]:
         {"theme": r[0], "posts": r[1], "avg_sentiment": r[2], "total_upvotes": r[3]}
         for r in rows
     ]
+
+
+@app.get("/companies/{ticker}/comments")
+def company_comments(ticker: str) -> dict:
+    with db() as con:
+        try:
+            row = con.execute("""
+                SELECT cs.comments, cs.avg_sentiment,
+                       cs.positive_comments, cs.negative_comments,
+                       cs.total_comment_upvotes
+                FROM marts.comment_sentiment_by_company cs
+                JOIN marts.dim_company c USING (company_id)
+                WHERE c.ticker = ?
+            """, [ticker.upper()]).fetchone()
+        except Exception:
+            raise HTTPException(
+                status_code=503,
+                detail="Comment sentiment mart not built yet — run NLP comments + dbt.",
+            )
+    if not row:
+        raise HTTPException(status_code=404, detail=f"No comment data for {ticker}")
+    return {
+        "ticker":              ticker.upper(),
+        "comments":            row[0],
+        "avg_sentiment":       row[1],
+        "positive_comments":   row[2],
+        "negative_comments":   row[3],
+        "total_comment_upvotes": row[4],
+    }

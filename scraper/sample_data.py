@@ -9,7 +9,7 @@ import random
 from datetime import datetime, timedelta, timezone
 
 from config import COMPANIES, SUBREDDITS
-from warehouse.db import init_schema, upsert_comments, upsert_posts
+from warehouse.db import init_schema, upsert_comments, upsert_posts  # noqa: F401
 
 
 # Title templates per "tone" — sentiment model will pick these up naturally.

@@ -125,6 +125,25 @@ fig = px.line(
 fig.update_layout(legend_title_text="", hovermode="x unified")
 st.plotly_chart(fig, use_container_width=True)
 
+# --- Comment-level metrics -----------------------------------------------
+try:
+    comment_row = load(f"""
+        SELECT comments, avg_sentiment, negative_comments, positive_comments
+        FROM marts.comment_sentiment_by_company
+        WHERE company_id = {company_id}
+    """)
+    if not comment_row.empty:
+        cr = comment_row.iloc[0]
+        st.subheader("Comment-level sentiment")
+        cc1, cc2, cc3 = st.columns(3)
+        cc1.metric("Comments scored", f"{int(cr.comments):,}")
+        cc2.metric("Avg comment sentiment", f"{cr.avg_sentiment:+.2f}")
+        denom = max(int(cr.negative_comments) + int(cr.positive_comments), 1)
+        cc3.metric("Comment negative-share",
+                   f"{int(cr.negative_comments) / denom:.0%}")
+except Exception:
+    pass    # mart absent in early runs — comment NLP not yet executed
+
 # --- Theme breakdown ------------------------------------------------------
 st.subheader(f"Top themes — {company_name}")
 st.dataframe(

@@ -16,7 +16,7 @@ with DAG(
     dag_id="scrape_reddit",
     description="Pull hot posts from tracked subreddits.",
     start_date=datetime(2026, 1, 1),
-    schedule_interval="@daily",
+    schedule="@daily",
     catchup=False,
     default_args=default_args,
     tags=["reddit", "ingest"],
