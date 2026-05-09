@@ -37,12 +37,22 @@ class RedditClient:
             log.error("HTTP error for %s: %s", url, e)
             return None
 
-    def get_subreddit_new(self, subreddit: str, limit: int = 100, after: str | None = None):
-        url = f"https://www.reddit.com/r/{subreddit}/new.json"
-        params = {"limit": limit}
+    def get_subreddit_listing(self, subreddit: str, listing: str = "new",
+                              limit: int = 100, after: str | None = None,
+                              t: str | None = None):
+        """`listing` ∈ {new, hot, top, rising}. `t` only applies to `top`:
+        one of {hour, day, week, month, year, all}."""
+        url = f"https://www.reddit.com/r/{subreddit}/{listing}.json"
+        params: dict = {"limit": limit}
         if after:
             params["after"] = after
+        if t and listing == "top":
+            params["t"] = t
         return self._get(url, params=params)
+
+    # Back-compat helper.
+    def get_subreddit_new(self, subreddit: str, limit: int = 100, after: str | None = None):
+        return self.get_subreddit_listing(subreddit, "new", limit=limit, after=after)
 
     def get_post_comments(self, subreddit: str, post_id: str):
         url = f"https://www.reddit.com/r/{subreddit}/comments/{post_id}.json"
@@ -51,19 +61,35 @@ class RedditClient:
 
 def fetch_subreddit(name: str, limit: int = 100,
                     pull_comments: bool = True,
-                    comments_per_post: int = 10) -> tuple[list[dict], list[dict]]:
-    """Pull recent posts and (optionally) top-level comments from a subreddit."""
+                    comments_per_post: int = 10,
+                    listings: tuple[tuple[str, str | None], ...] = (
+                        ("new",  None),
+                        ("hot",  None),
+                        ("top",  "week"),
+                    )) -> tuple[list[dict], list[dict]]:
+    """Pull posts (and optionally top-level comments) from a subreddit.
+
+    By default pulls from new + hot + top(week) for breadth and time
+    coverage. Dedup happens at the DuckDB upsert layer (post_id PK).
+    """
     client = RedditClient()
     posts: list[dict] = []
     comments: list[dict] = []
+    seen: set[str] = set()
 
-    data = client.get_subreddit_new(name, limit=limit)
-    if not data or "data" not in data:
-        log.warning("No data returned for r/%s", name)
-        return posts, comments
+    raw_children: list = []
+    for listing, t in listings:
+        data = client.get_subreddit_listing(name, listing=listing, limit=limit, t=t)
+        if not data or "data" not in data:
+            log.warning("No data for r/%s (%s)", name, listing)
+            continue
+        raw_children.extend(data["data"]["children"])
 
-    for child in data["data"]["children"]:
+    for child in raw_children:
         p = child["data"]
+        if p["id"] in seen:
+            continue
+        seen.add(p["id"])
         posts.append({
             "post_id":      p["id"],
             "subreddit":    name,

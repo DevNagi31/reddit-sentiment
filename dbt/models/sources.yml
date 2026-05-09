@@ -25,6 +25,14 @@ sources:
             tests:
               - accepted_values:
                   values: ['positive', 'neutral', 'negative']
+      - name: comment_sentiment
+        columns:
+          - name: comment_id
+            tests: [not_null, unique]
+          - name: sentiment
+            tests:
+              - accepted_values:
+                  values: ['positive', 'neutral', 'negative']
 
   - name: seed
     description: "Seed dimensions populated from config.py."

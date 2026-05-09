@@ -17,7 +17,12 @@ import logging
 import re
 from typing import Iterable
 
-from warehouse.db import connect, init_schema, upsert_sentiment
+from warehouse.db import (
+    connect,
+    init_schema,
+    upsert_comment_sentiment,
+    upsert_sentiment,
+)
 
 log = logging.getLogger(__name__)
 
@@ -144,15 +149,60 @@ def score(backend: str = "auto", limit: int | None = None) -> int:
     return n
 
 
+def score_comments(backend: str = "auto", limit: int | None = None) -> int:
+    init_schema()
+    con = connect()
+    try:
+        sql = """
+            SELECT c.comment_id, c.body
+            FROM raw.comments c
+            LEFT JOIN raw.comment_sentiment s USING (comment_id)
+            WHERE s.comment_id IS NULL
+              AND length(coalesce(c.body, '')) > 4
+        """
+        if limit:
+            sql += f" LIMIT {int(limit)}"
+        rows = con.execute(sql).fetchall()
+    finally:
+        con.close()
+
+    if not rows:
+        log.info("No unscored comments.")
+        return 0
+
+    log.info("Scoring %d comments (backend=%s)", len(rows), backend)
+
+    if backend == "transformer":
+        pipe = _load_transformer()
+        scored = _transformer_scores(pipe, [b for _, b in rows])
+        model_version = _HF_MODEL
+    else:
+        scored = [_lexicon_score(b) for _, b in rows]
+        model_version = "lexicon-v1"
+
+    out = [
+        {"comment_id": cid, "sentiment": label, "score": s, "model_version": model_version}
+        for (cid, _), (label, s) in zip(rows, scored)
+    ]
+    n = upsert_comment_sentiment(out)
+    log.info("Wrote sentiment for %d comments.", n)
+    return n
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", choices=["auto", "transformer", "lexicon"],
                         default="auto")
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--comments", action="store_true",
+                        help="Score comments instead of posts.")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    score(backend=args.backend, limit=args.limit)
+    if args.comments:
+        score_comments(backend=args.backend, limit=args.limit)
+    else:
+        score(backend=args.backend, limit=args.limit)
 
 
 if __name__ == "__main__":

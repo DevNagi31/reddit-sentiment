@@ -50,6 +50,16 @@ def init_schema() -> None:
             )
         """)
 
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS raw.comment_sentiment (
+                comment_id     VARCHAR PRIMARY KEY,
+                sentiment      VARCHAR,
+                score          DOUBLE,
+                model_version  VARCHAR,
+                scored_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # NLP outputs land here; dbt joins them with raw.posts.
         con.execute("""
             CREATE TABLE IF NOT EXISTS raw.post_sentiment (
@@ -153,6 +163,24 @@ def upsert_sentiment(rows: list[dict]) -> int:
             INSERT INTO raw.post_sentiment
               (post_id, sentiment, score, theme, model_version)
             SELECT post_id, sentiment, score, theme, model_version FROM incoming
+        """)
+        return len(df)
+    finally:
+        con.close()
+
+
+def upsert_comment_sentiment(rows: list[dict]) -> int:
+    if not rows:
+        return 0
+    df = pd.DataFrame(rows)
+    con = connect()
+    try:
+        con.register("incoming", df)
+        con.execute("DELETE FROM raw.comment_sentiment WHERE comment_id IN (SELECT comment_id FROM incoming)")
+        con.execute("""
+            INSERT INTO raw.comment_sentiment
+              (comment_id, sentiment, score, model_version)
+            SELECT comment_id, sentiment, score, model_version FROM incoming
         """)
         return len(df)
     finally:
