@@ -252,6 +252,19 @@ def kpi(label: str, value: str, delta: str | None = None,
     )
 
 
+def _safe(value, fallback: str = "—") -> str:
+    """Coerce a possibly-None / NaN / non-string value to a safe display string.
+
+    `x or fallback` doesn't work for NaN because NaN is truthy in Python.
+    """
+    if value is None:
+        return fallback
+    if isinstance(value, float) and pd.isna(value):
+        return fallback
+    s = str(value)
+    return s if s else fallback
+
+
 def sentiment_pill(s: str) -> str:
     return {
         "positive": '<span class="pill pill-pos">positive</span>',
@@ -545,8 +558,8 @@ with tab_company:
                 f'<div class="post-card"><div class="post-row">'
                 f'<img src="{logo_url(company_name)}" class="post-logo" />'
                 f'<div class="post-body">'
-                f'<a href="{html.escape(r.permalink)}" target="_blank" class="post-title">'
-                f'{html.escape(r.title[:140])}</a>'
+                f'<a href="{html.escape(_safe(r.permalink, "#"))}" target="_blank" class="post-title">'
+                f'{html.escape(_safe(r.title)[:140])}</a>'
                 f'<div class="post-meta">{sentiment_pill("positive")}'
                 f'<span class="sep">·</span>score {r.score:+.2f}'
                 f'<span class="sep">·</span>{int(r.upvotes)} upvotes</div>'
@@ -566,8 +579,8 @@ with tab_company:
                 f'<div class="post-card"><div class="post-row">'
                 f'<img src="{logo_url(company_name)}" class="post-logo" />'
                 f'<div class="post-body">'
-                f'<a href="{html.escape(r.permalink)}" target="_blank" class="post-title">'
-                f'{html.escape(r.title[:140])}</a>'
+                f'<a href="{html.escape(_safe(r.permalink, "#"))}" target="_blank" class="post-title">'
+                f'{html.escape(_safe(r.title)[:140])}</a>'
                 f'<div class="post-meta">{sentiment_pill("negative")}'
                 f'<span class="sep">·</span>score {r.score:+.2f}'
                 f'<span class="sep">·</span>{int(r.upvotes)} upvotes</div>'
@@ -665,16 +678,19 @@ with tab_posts:
     st.markdown(f'<div class="sec-cap">{len(posts)} posts</div>',
                 unsafe_allow_html=True)
 
+    if posts.empty:
+        st.info("No posts match the current filter.")
+
     for r in posts.itertuples():
         st.markdown(
             f'<div class="post-card"><div class="post-row">'
-            f'<img src="{logo_url(r.company_name)}" class="post-logo" />'
+            f'<img src="{logo_url(_safe(r.company_name, ""))}" class="post-logo" />'
             f'<div class="post-body">'
-            f'<a href="{html.escape(r.permalink)}" target="_blank" class="post-title">'
-            f'{html.escape(r.title[:140])}</a>'
-            f'<div class="post-meta">{sentiment_pill(r.sentiment)}'
-            f'<span class="sep">·</span><strong>{html.escape(r.company_name)}</strong>'
-            f'<span class="sep">·</span>{html.escape(r.theme or "—")}'
+            f'<a href="{html.escape(_safe(r.permalink, "#"))}" target="_blank" class="post-title">'
+            f'{html.escape(_safe(r.title)[:140])}</a>'
+            f'<div class="post-meta">{sentiment_pill(_safe(r.sentiment, "neutral"))}'
+            f'<span class="sep">·</span><strong>{html.escape(_safe(r.company_name))}</strong>'
+            f'<span class="sep">·</span>{html.escape(_safe(r.theme))}'
             f'<span class="sep">·</span>{r.created_utc:%b %d, %H:%M}'
             f'<span class="sep">·</span>score {r.score:+.2f}'
             f'<span class="sep">·</span>{int(r.upvotes)} ups'
